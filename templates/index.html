@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="grid">
+    <!-- Left: Start Scan Card -->
+    <section class="card card-main">
+        <div class="card-header">
+            <h2>Start New Scan</h2>
+            <p class="card-subtitle">
+                Enter a target URL to test for basic XSS, SQLi and CSRF risks.
+            </p>
+        </div>
+
+        <form action="{{ url_for('start_scan') }}" method="post" class="scan-form">
+            <label for="target_url" class="field-label">Target URL</label>
+            <div class="field-inline">
+                <input
+                    type="url"
+                    id="target_url"
+                    name="target_url"
+                    placeholder="https://example.com"
+                    required
+                    class="input-text"
+                />
+                <button type="submit" class="btn btn-primary">
+                    ▶ Start Scan
+                </button>
+            </div>
+            <p class="help-text">
+                Tip: Use a lab / test application you control. Do not scan random sites on the internet.
+            </p>
+        </form>
+    </section>
+
+    <!-- Right: Quick Stats -->
+    <section class="card card-stats">
+        <h3>Overview</h3>
+        <div class="stats-row">
+            <div class="stat">
+                <div class="stat-label">Total Scans</div>
+                <div class="stat-value">{{ scans|length }}</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Completed</div>
+                <div class="stat-value">
+                    {{ scans | selectattr("status", "equalto", "completed") | list | length }}
+                </div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Errors</div>
+                <div class="stat-value stat-value-bad">
+                    {{ scans | selectattr("status", "equalto", "error") | list | length }}
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+<!-- Previous Scans Table -->
+<section class="card card-table">
+    <div class="card-header card-header-row">
+        <h3>Previous Scans</h3>
+        {% if scans %}
+            <span class="card-subtitle">Click “Details” to view findings &amp; export reports.</span>
+        {% else %}
+            <span class="card-subtitle">No scans yet. Start one above.</span>
+        {% endif %}
+    </div>
+
+    {% if scans %}
+    <div class="table-wrapper">
+        <table class="table">
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>Target</th>
+                <th>Status</th>
+                <th>Started</th>
+                <th>Finished</th>
+                <th>View</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for s in scans|sort(attribute="id", reverse=True) %}
+                <tr>
+                    <td>#{{ s["id"] }}</td>
+                    <td class="cell-url" title="{{ s['target_url'] }}">{{ s["target_url"] }}</td>
+                    <td>
+                        {% if s["status"] == "completed" %}
+                            <span class="badge badge-success">Completed</span>
+                        {% elif s["status"] == "running" %}
+                            <span class="badge badge-warning">Running</span>
+                        {% else %}
+                            <span class="badge badge-error">Error</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ s["started_at"] or "-" }}</td>
+                    <td>{{ s["finished_at"] or "-" }}</td>
+                    <td>
+                        <a href="{{ url_for('view_scan', scan_id=s['id']) }}" class="btn btn-sm btn-outline">
+                            Details
+                        </a>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+</section>
+
+{% endblock %}
